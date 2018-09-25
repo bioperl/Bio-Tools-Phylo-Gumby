@@ -1,7 +1,7 @@
 #
 # BioPerl module for Bio::Tools::Run::Phylo::Gumby
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Sendu Bala <bix@sendu.me.uk>
 #
@@ -74,7 +74,7 @@ You will need to enable this Gumby wrapper to find the gumby program.
 This can be done in (at least) three ways:
 
  1. Make sure the gumby executable is in your path.
- 2. Define an environmental variable GUMBYDIR which is a 
+ 2. Define an environmental variable GUMBYDIR which is a
     directory which contains the gumby application:
     In bash:
 
@@ -101,15 +101,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -132,6 +132,7 @@ Internal methods are usually preceded with a _
 =cut
 
 package Bio::Tools::Run::Phylo::Gumby;
+
 use strict;
 
 use Cwd;
@@ -200,10 +201,10 @@ sub program_dir {
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    
+
     $self->_set_from_args(\@args, -methods => [@PARAMS, @SWITCHES, 'quiet'],
                                   -create => 1);
-    
+
     return $self;
 }
 
@@ -248,10 +249,10 @@ sub annots {
                 $self->throw("'$thing' was not a Bio::SeqFeatureI or a file");
             }
         }
-        
+
         if (keys %feats) {
             my $temp_dir = $self->tempdir;
-            
+
             while (my ($seq_id, $feats) = each %feats) {
                 my $temp_file = File::Spec->catfile($temp_dir, $seq_id.'.gff');
                 $temp_file = File::Spec->rel2abs($temp_file);
@@ -260,10 +261,10 @@ sub annots {
                 push(@files, $temp_file);
             }
         }
-        
+
         $self->{annots} = \@files;
     }
-    
+
     if (defined $self->{annots}) {
         return join(' ', @{$self->{annots}});
     }
@@ -307,13 +308,13 @@ sub annots {
 
 sub run {
     my ($self, $aln, $tree) = @_;
-    
+
     ($aln && $tree) || $self->throw("alignment and tree must be supplied");
     $aln = $self->_alignment($aln);
     $tree = $self->_tree($tree);
-    
+
     $tree->force_binary;
-    
+
     # adjust seq & node ids to remove spaces and underscores (eg. if tree
     # generated from taxonomy/ user input bad names)
     foreach my $thing ($tree->get_leaf_nodes, $aln->each_seq) {
@@ -327,38 +328,38 @@ sub run {
         $new_aln->add_seq($seq);
     }
     $self->_alignment($new_aln);
-    
+
     #*** at some stage we want to revert the ids back to original...
-    
+
     # check node and seq names match
     $self->_check_names;
-    
-    return $self->_run; 
+
+    return $self->_run;
 }
 
 sub _run {
     my $self = shift;
-    
+
     my $exe = $self->executable || return;
-    
+
     # cd to a temp dir
     my $temp_dir = $self->tempdir;
     my $cwd = Cwd->cwd();
     chdir($temp_dir) || $self->throw("Couldn't change to temp dir '$temp_dir'");
-    
+
     my $tree_file = 'tree_file';
     my $aln_file = $self->_write_alignment;
-    
+
     # generate a gumby-friendly tree file
     my $tree = $self->_tree;
     $tree = $tree->simplify_to_leaves_string;
     open(my $tfhandle, '>', $tree_file) || $self->throw("Could not write to tree file '$tree_file'");
     print $tfhandle $tree, "\n";
     close($tfhandle);
-    
+
     my $command = $exe.$self->_setparams($aln_file, $tree_file);
     $self->debug("gumby command = $command\n");
-    
+
     open(PIPE, "$command |") || $self->throw("gumby call ($command) failed to start: $? | $!");
     my $error = '';
     while (<PIPE>) {
@@ -368,18 +369,18 @@ sub _run {
         }
     }
     close(PIPE) || ($error ? $self->warn("gumby call ($command) failed: $error") : $self->throw("gumby call ($command) crashed: $?"));
-    
+
     my $aln = $self->_alignment();
     my %offsets;
     foreach my $seq ($aln->each_seq) {
         $offsets{lc($seq->id)} = $seq->start - 1;
     }
-    
+
     my @feats = ();
     foreach my $file ('out_all.align', 'out_exon.align', 'out_nonexon.align') {
         -e $file || next;
         my $parser = Bio::Tools::Phylo::Gumby->new(-file => $file);
-        
+
         while (my @results = $parser->next_result) {
             foreach my $result (@results) {
                 my $this_adjust = $offsets{lc($result->seq_id)};
@@ -388,13 +389,13 @@ sub _run {
             }
             push(@feats, @results);
         }
-        
+
         unlink($file);
     }
-    
+
     # cd back again
     chdir($cwd) || $self->throw("Couldn't change back to working directory '$cwd'");
-    
+
     return @feats;
 }
 
@@ -410,7 +411,7 @@ sub _run {
 
 sub _setparams {
     my ($self, $aln_file, $tree_file) = @_;
-    
+
     my $null = ($^O =~ m/mswin/i) ? 'NUL' : '/dev/null';
     my $param_string = ' '.$tree_file;
     $param_string .= ' '.$aln_file;
@@ -420,7 +421,7 @@ sub _setparams {
     $param_string .= ' -o out';
     $param_string .= ' 2>&1';
     $param_string .= " 1>$null" if $self->quiet;
-    
+
     return $param_string;
 }
 

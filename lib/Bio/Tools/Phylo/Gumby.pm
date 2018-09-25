@@ -1,7 +1,7 @@
 #
 # BioPerl module for Bio::Tools::Phylo::Gumby
 #
-# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+# Please direct questions and support issues to <bioperl-l@bioperl.org>
 #
 # Cared for by Sendu Bala <bix@sendu.me.uk>
 #
@@ -45,15 +45,15 @@ the Bioperl mailing list.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
+=head2 Support
 
 Please direct usage questions or support issues to the mailing list:
 
 I<bioperl-l@bioperl.org>
 
-rather than to the module maintainer directly. Many experienced and 
-reponsive experts will be able look at the problem and quickly 
-address it. Please include a thorough description of the problem 
+rather than to the module maintainer directly. Many experienced and
+reponsive experts will be able look at the problem and quickly
+address it. Please include a thorough description of the problem
 with code and data examples if at all possible.
 
 =head2 Reporting Bugs
@@ -78,6 +78,7 @@ Internal methods are usually preceded with a _
 # Let the code begin...
 
 package Bio::Tools::Phylo::Gumby;
+
 use strict;
 
 use Bio::SeqFeature::Annotated;
@@ -100,9 +101,9 @@ use base qw(Bio::Root::Root Bio::Root::IO);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    
+
     $self->_initialize_io(@args);
-    
+
     return $self;
 }
 
@@ -127,24 +128,24 @@ sub new {
 
 sub next_result {
     my ($self) = @_;
-    
+
     my $line = $self->_readline || return;
     while ($line !~ /^start/) {
         $line = $self->_readline || return;
-        
+
         if ($line =~ /^(all|exon|nonexon):/) {
             $self->{_kind} = $1;
         }
     }
-    
+
     my ($score, $pvalue) = $line =~ /score (\d+), pvalue (\S+)/;
-    
+
     my @feats;
     while ($line = $self->_readline) {
         $line =~ /^$/ && last;
         $line || last;
         my ($seq_id, $start, $end) = split(/\s+/, $line);
-        
+
         my $feature = Bio::SeqFeature::Annotated->new(-seq_id => $seq_id,
                                                       -start  => $start,
                                                       -end    => $end,
@@ -157,10 +158,10 @@ sub next_result {
         $feature->annotation->add_Annotation($sv);
         $sv = Bio::Annotation::SimpleValue->new(-tagname => 'predicted', -value => 1);
         $feature->annotation->add_Annotation($sv);
-        
+
         push(@feats, $feature);
     }
-    
+
     return @feats;
 }
 
